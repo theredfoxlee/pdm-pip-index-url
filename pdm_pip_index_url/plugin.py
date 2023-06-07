@@ -1,73 +1,60 @@
+import functools
 import os
-from typing import Mapping, NamedTuple, Optional
+from typing import Callable, MutableMapping
 
 from pdm.core import Core
 from pdm.project import Config, Project
 from pdm.signals import pre_invoke
 from pdm.termui import Verbosity
 
-
-def get_pip_index_url(env: Mapping[str, str]) -> Optional[str]:
-    """Return value of either PIP_INDEX_URL or PIP_EXTRA_INDEX_URL (when defined)."""
-    return env.get("PIP_INDEX_URL", env.get("PIP_EXTRA_INDEX_URL"))
+from .utils import ParsedUrl, find_env, parse_url
 
 
-def raise_for_invalid_env(env: Mapping[str, str]) -> None:
-    if (
-        set_envs := {"PDM_PYPI_URL", "PDM_PYPI_USERNAME", "PDM_PYPI_PASSWORD"}
-        & env.keys()
-    ):
-        raise ValueError(f"Environment variables already set: {set_envs}")
+def run_plugin(
+    environ: MutableMapping[str, str], *, log_detail: Callable[[str], None]
+) -> None:
+    """Set PDM_PYPI_URL in `environ`."""
+    known_pdm_envs: set[str] = {
+        "PDM_PYPI_URL",
+        "PDM_PYPI_USERNAME",
+        "PDM_PYPI_PASSWORD",
+    } & environ.keys()
 
-
-class BaseAuth(NamedTuple):
-    username: str
-    password: str
-
-
-class PDMConfig(NamedTuple):
-    pdm_pypi_url: str
-    pdm_pypi_auth: Optional[BaseAuth]
-
-
-def get_pdm_config(pip_index_url: str) -> PDMConfig:
-    # TODO: Better read.
-    return PDMConfig(pdm_pypi_url=pip_index_url, pdm_pypi_auth=None)
-
-
-def plugin_main(project: Project, _: Config) -> None:
-    try:
-        raise_for_invalid_env(os.environ)
-    except ValueError as e:
-        project.core.ui.echo(f"Environment validation failed: {e} (skipping)", err=True)
-        return
-
-    if (pip_index_url := get_pip_index_url(os.environ)) is None:
-        project.core.ui.echo(
-            "No PIP_INDEX_URL found (skipping)", verbosity=Verbosity.DETAIL
+    if known_pdm_envs:
+        log_detail(
+            "Pip index url search skipped as the following"
+            f" envs are already set: {known_pdm_envs}"
         )
         return
 
-    pdm_config: PDMConfig = get_pdm_config(pip_index_url=pip_index_url)
+    keys: list[str] = ["PIP_INDEX_URL", "PIP_EXTRA_INDEX_URL"]
+    log_detail(f"Search for pip index url [{keys=}]")
 
-    def _verbose_set_env(key: str, value: str) -> None:
-        project.core.ui.echo(
-            f"Setting env: {key=} (overwrite={key in os.environ})",
-            verbosity=Verbosity.DETAIL,
-        )
-        os.environ[key] = value
-
-    _verbose_set_env("PDM_PYPI_URL", pdm_config.pdm_pypi_url)
-
-    if pdm_config.pdm_pypi_auth is None:
-        project.core.ui.echo(
-            "No auth found in PIP_INDEX_URL", verbosity=Verbosity.DETAIL
-        )
+    if (env := find_env(envs=environ, keys=keys)) is None:
+        log_detail("Pip index url was not found")
         return
 
-    _verbose_set_env("PDM_PYPI_USERNAME", pdm_config.pdm_pypi_auth.username)
-    _verbose_set_env("PDM_PYPI_PASSWORD", pdm_config.pdm_pypi_auth.password)
+    log_detail(f"Pip index url was found [source={env[0]}]")
+    parsed_url: ParsedUrl = parse_url(url=env[1])
+
+    def verbose_setenv(key: str, value: str) -> None:
+        log_detail(f"Setting environment variable: {key}")
+        environ[key] = value
+
+    verbose_setenv("PDM_PYPI_URL", parsed_url.url)
+    if parsed_url.auth is None:
+        return
+    verbose_setenv("PDM_PYPI_USERNAME", parsed_url.auth.username)
+    verbose_setenv("PDM_PYPI_PASSWORD", parsed_url.auth.password)
 
 
 def register_plugin(_: Core) -> None:
-    pre_invoke.connect(plugin_main)
+    def _run_plugin(project: Project, _: Config) -> None:
+        run_plugin(
+            environ=os.environ,
+            log_detail=functools.partial(
+                project.core.ui.echo, verbosity=Verbosity.DETAIL
+            ),
+        )
+
+    pre_invoke.connect(_run_plugin)
