@@ -1,5 +1,17 @@
+"""A module with utlities for the plugin."""
+
 import urllib.parse
 from typing import Iterable, Mapping, NamedTuple, Optional, cast
+
+
+class BaseAuth(NamedTuple):
+    username: str
+    password: str
+
+
+class StrippedUrl(NamedTuple):
+    url: str
+    auth: Optional[BaseAuth]
 
 
 def find_env(envs: Mapping[str, str], keys: Iterable[str]) -> Optional[tuple[str, str]]:
@@ -10,17 +22,11 @@ def find_env(envs: Mapping[str, str], keys: Iterable[str]) -> Optional[tuple[str
     return None
 
 
-class BaseAuth(NamedTuple):
-    username: str
-    password: str
+def strip_url(url: str) -> StrippedUrl:
+    """Return `StrippedUrl` containing url and auth separately.
 
-
-class ParsedUrl(NamedTuple):
-    url: str
-    auth: Optional[BaseAuth]
-
-
-def parse_url(url: str) -> ParsedUrl:
+    For details, refer to `process_pip_envs`.
+    """
     parsed_url: urllib.parse.ParseResult = urllib.parse.urlparse(url)
 
     url_without_auth: str = cast(
@@ -39,4 +45,4 @@ def parse_url(url: str) -> ParsedUrl:
         # Case 2: only key is provided
         auth = BaseAuth(username="foo", password=parsed_url.username)
 
-    return ParsedUrl(url=url_without_auth, auth=auth)
+    return StrippedUrl(url=url_without_auth, auth=auth)

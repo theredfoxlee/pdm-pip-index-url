@@ -33,3 +33,6 @@ linters = {composite = [
     "ruff check --fix .",
     "mypy .",
 ]}
+
+[project.entry-points.pdm]
+pip_index_url = "pdm_pip_index_url:register_plugin"

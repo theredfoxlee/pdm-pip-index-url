@@ -1,3 +1,5 @@
+"""A module with plugin's business logic."""
+
 import functools
 import os
 from typing import Callable, MutableMapping
@@ -7,54 +9,69 @@ from pdm.project import Config, Project
 from pdm.signals import pre_invoke
 from pdm.termui import Verbosity
 
-from .utils import ParsedUrl, find_env, parse_url
+from .utils import StrippedUrl, find_env, strip_url
 
 
-def run_plugin(
-    environ: MutableMapping[str, str], *, log_detail: Callable[[str], None]
+def process_pip_envs(
+    envs: MutableMapping[str, str], *, log: Callable[[str], None]
 ) -> None:
-    """Set PDM_PYPI_URL in `environ`."""
+    """Mutate `envs` by settings PDM_PYPI_* keys when PIP_* keys are present.
+
+    Processing begins with validating the environment variables. If any PDM_PYPI
+    variables are present, processing stops. Otherwise, the script searches for
+    PIP_INDEX_URL (or PIP_EXTRA_INDEX_URL if the former is not present). If found,
+    any basic auth present in the URL is removed and passed to PDM_PYPI_USERNAME
+    and PDM_PYPI_PASSWORD. The stripped URL is set as PDM_PYPI_URL.
+
+    Note that when only `<schema>://<key>@<other>` is passed instead of
+    `<schema>://<username>:<password>@<other>`, then the username is set as "foo"
+    and the password as `<key>`.
+    """
+    # [1] Validate environment.
     known_pdm_envs: set[str] = {
         "PDM_PYPI_URL",
         "PDM_PYPI_USERNAME",
         "PDM_PYPI_PASSWORD",
-    } & environ.keys()
-
+    } & envs.keys()
     if known_pdm_envs:
-        log_detail(
+        log(
             "Pip index url search skipped as the following"
             f" envs are already set: {known_pdm_envs}"
         )
         return
 
+    # [2] Find pip index url.
     keys: list[str] = ["PIP_INDEX_URL", "PIP_EXTRA_INDEX_URL"]
-    log_detail(f"Search for pip index url [{keys=}]")
-
-    if (env := find_env(envs=environ, keys=keys)) is None:
-        log_detail("Pip index url was not found")
+    log(f"Searching for pip index url (envs: {keys})")
+    if (env := find_env(envs=envs, keys=keys)) is None:
+        log("Pip index url was not found")
         return
+    log(f"Pip index url was found (source: {env[0]})")
 
-    log_detail(f"Pip index url was found [source={env[0]}]")
-    parsed_url: ParsedUrl = parse_url(url=env[1])
+    # [3] Parse pip index url.
+    stripped_url: StrippedUrl = strip_url(url=env[1])
 
     def verbose_setenv(key: str, value: str) -> None:
-        log_detail(f"Setting environment variable: {key}")
-        environ[key] = value
+        """Helper."""
+        log(f"Setting environment variable: {key}")
+        envs[key] = value
 
-    verbose_setenv("PDM_PYPI_URL", parsed_url.url)
-    if parsed_url.auth is None:
+    # [4] Set PDM_PYPI_* envs.
+    verbose_setenv("PDM_PYPI_URL", stripped_url.url)
+    if stripped_url.auth is None:
         return
-    verbose_setenv("PDM_PYPI_USERNAME", parsed_url.auth.username)
-    verbose_setenv("PDM_PYPI_PASSWORD", parsed_url.auth.password)
+    verbose_setenv("PDM_PYPI_USERNAME", stripped_url.auth.username)
+    verbose_setenv("PDM_PYPI_PASSWORD", stripped_url.auth.password)
 
 
 def register_plugin(_: Core) -> None:
-    def _run_plugin(project: Project, _: Config) -> None:
-        run_plugin(
-            environ=os.environ,
-            log_detail=functools.partial(
-                project.core.ui.echo, verbosity=Verbosity.DETAIL
-            ),
+    """Entrypoint."""
+
+    def run_plugin(project: Project, _: Config) -> None:
+        """Helper."""
+        process_pip_envs(
+            envs=os.environ,
+            log=functools.partial(project.core.ui.echo, verbosity=Verbosity.DETAIL),
         )
 
-    pre_invoke.connect(_run_plugin)
+    pre_invoke.connect(run_plugin)
