@@ -12,6 +12,9 @@ requires-python = ">=3.7"
 readme = "README.md"
 license = {text = "MIT"}
 
+[project.urls]
+repository = "https://github.com/theredfoxlee/pdm-pip-index-url"
+
 [build-system]
 requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
