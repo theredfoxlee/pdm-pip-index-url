@@ -2,7 +2,7 @@
 [project]
 name = "pdm-pip-index-url"
 version = "0.1.0"
-description = ""
+description = "Automatic coverter of PIP_*INDEX_URL to PDM_PYPI_* envs."
 authors = [
     {name = "Kamil Janiec", email = "kamil.p.janiec@gmail.com"},
 ]
@@ -24,6 +24,7 @@ dev = [
     "ruff>=0.0.270",
     "mypy>=1.3.0",
     "pdm>=2.7.0",
+    "pytest-mock>=3.10.0",
 ]
 
 [tool.pdm.scripts]

@@ -1,4 +1,4 @@
-"""A module with utlities for the plugin."""
+"""A module with utilities for the plugin."""
 
 import urllib.parse
 from typing import Iterable, Mapping, NamedTuple, Optional, cast
