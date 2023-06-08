@@ -1,7 +1,7 @@
 """Tests for utils.py module."""
 
 
-from typing import Optional
+from typing import Dict, List, Optional, Tuple
 
 import pytest
 
@@ -20,7 +20,7 @@ from pdm_pip_index_url.utils import BaseAuth, StrippedUrl, find_env, strip_url
     ],
 )
 def test_find_env(
-    envs: dict[str, str], keys: list[str], expected_pair: Optional[tuple[str, str]]
+    envs: Dict[str, str], keys: List[str], expected_pair: Optional[Tuple[str, str]]
 ) -> None:
     """Check if env pair is found as expected."""
     assert find_env(envs=envs, keys=keys) == expected_pair

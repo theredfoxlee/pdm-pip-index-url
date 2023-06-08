@@ -1,7 +1,7 @@
 """A module with utilities for the plugin."""
 
 import urllib.parse
-from typing import Iterable, Mapping, NamedTuple, Optional, cast
+from typing import Iterable, Mapping, NamedTuple, Optional, Tuple, cast
 
 
 class BaseAuth(NamedTuple):
@@ -14,11 +14,11 @@ class StrippedUrl(NamedTuple):
     auth: Optional[BaseAuth]
 
 
-def find_env(envs: Mapping[str, str], keys: Iterable[str]) -> Optional[tuple[str, str]]:
+def find_env(envs: Mapping[str, str], keys: Iterable[str]) -> Optional[Tuple[str, str]]:
     """Return `(key, value)` pair for first `key` from `keys` that exists in `envs`."""
     for key in keys:
-        if (value := envs.get(key)) is not None:
-            return key, value
+        if key in envs:
+            return key, envs[key]
     return None
 
 

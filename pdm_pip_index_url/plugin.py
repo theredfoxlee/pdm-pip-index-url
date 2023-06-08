@@ -2,7 +2,7 @@
 
 import functools
 import os
-from typing import Any, Callable, MutableMapping
+from typing import Any, Callable, List, MutableMapping, Optional, Set, Tuple
 
 from pdm.core import Core
 from pdm.project import Project
@@ -28,7 +28,7 @@ def process_pip_envs(
     and the password as `<key>`.
     """
     # [1] Validate environment.
-    known_pdm_envs: set[str] = {
+    known_pdm_envs: Set[str] = {
         "PDM_PYPI_URL",
         "PDM_PYPI_USERNAME",
         "PDM_PYPI_PASSWORD",
@@ -41,9 +41,10 @@ def process_pip_envs(
         return
 
     # [2] Find pip index url.
-    keys: list[str] = ["PIP_INDEX_URL", "PIP_EXTRA_INDEX_URL"]
+    keys: List[str] = ["PIP_INDEX_URL", "PIP_EXTRA_INDEX_URL"]
     log(f"Searching for pip index url (envs: {keys})")
-    if (env := find_env(envs=envs, keys=keys)) is None:
+    env: Optional[Tuple[str, str]] = find_env(envs=envs, keys=keys)
+    if env is None:
         log("Pip index url was not found")
         return
     log(f"Pip index url was found (source: {env[0]})")
