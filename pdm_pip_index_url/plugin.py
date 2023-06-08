@@ -2,10 +2,10 @@
 
 import functools
 import os
-from typing import Callable, MutableMapping
+from typing import Any, Callable, MutableMapping
 
 from pdm.core import Core
-from pdm.project import Config, Project
+from pdm.project import Project
 from pdm.signals import pre_invoke
 from pdm.termui import Verbosity
 
@@ -67,11 +67,11 @@ def process_pip_envs(
 def register_plugin(_: Core) -> None:
     """Entrypoint."""
 
-    def run_plugin(project: Project, _: Config) -> None:
-        """Helper."""
+    def run_plugin(project: Project, **_: Any) -> None:
+        """Adapter."""
         process_pip_envs(
             envs=os.environ,
             log=functools.partial(project.core.ui.echo, verbosity=Verbosity.DETAIL),
         )
 
-    pre_invoke.connect(run_plugin)
+    pre_invoke.connect(run_plugin, weak=False)
