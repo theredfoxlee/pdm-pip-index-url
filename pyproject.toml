@@ -1,7 +1,7 @@
 
 [project]
 name = "pdm-pip-index-url"
-version = "0.1.0"
+version = "0.1.1"
 description = "An automatic converter of PIP_*INDEX_URL to PDM_PYPI_* envs."
 authors = [
     {name = "Kamil Janiec", email = "kamil.p.janiec@gmail.com"},
