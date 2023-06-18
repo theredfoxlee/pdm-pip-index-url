@@ -1,7 +1,7 @@
 # pdm-pip-index-url
 
 [![GitHub Workflow - Status](https://img.shields.io/github/actions/workflow/status/theredfoxlee/pdm-pip-index-url/ci.yaml?label=tests)](https://github.com/theredfoxlee/pdm-pip-index-url/actions/workflows/ci.yaml)
-![PyPI - Version](https://img.shields.io/pypi/v/pdm-pip-index-url?color=%2334D058)
+[![PyPI - Version](https://img.shields.io/pypi/v/pdm-pip-index-url?color=%2334D058)](https://pypi.org/project/pdm-pip-index-url/)
 [![PyPI - Python Versions](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-blue)](./pyproject.toml)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/pdm-pip-index-url)](https://pypistats.org/packages/pdm-pip-index-url)
 ![PyPI - Format](https://img.shields.io/pypi/format/pdm-pip-index-url)
