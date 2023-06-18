@@ -17,3 +17,18 @@ For each pdm sub-command invocation, pdm will search for `PIP_*INDEX_URL` enviro
 ### Logging
 
 Turn on logging by adding `-v` to executed command, e.g.: `pdm add -v black`.
+
+### Example [Use Case]
+
+Consider a scenario where you are using PDM in an environment that does not provide a way to authenticate it to a private PyPI server but supports pip authentication (e.g., Azure Pipelines). Here is an example:
+
+```yaml
+# 1. Set PIP_INDEX_URL for <private-feed>.
+- task: PipAuthenticate@1
+  inputs:
+    artifactFeeds: <private-feed>
+# 2. Install this plugin.
+- script: pdm self add pdm-pip-index-url
+# 3. Use PIP_INDEX_URL env to install <private-package> from <private-feed>.
+- script: pdm add <private-package>
+```
