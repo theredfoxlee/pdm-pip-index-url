@@ -31,10 +31,17 @@ dev = [
 ]
 
 [tool.pdm.scripts]
+unit-tests = "pytest tests/"
 linters = {composite = [
     "black .",
     "isort .",
-    "ruff check --fix .",
+    "ruff --fix .",
+    "mypy .",
+]}
+linters-check = {composite = [
+    "black --check .",
+    "isort --check-only .",
+    "ruff check .",
     "mypy .",
 ]}
 
