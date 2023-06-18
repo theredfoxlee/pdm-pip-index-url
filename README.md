@@ -27,8 +27,10 @@ Consider a scenario where you are using PDM in an environment that does not prov
 - task: PipAuthenticate@1
   inputs:
     artifactFeeds: <private-feed>
-# 2. Install this plugin.
-- script: pdm self add pdm-pip-index-url
-# 3. Use PIP_INDEX_URL env to install <private-package> from <private-feed>.
+# 2. Install pdm.
+- script: pip install pdm==2.7.4
+# 3. Install this plugin.
+- script: pdm self add pdm-pip-index-url==0.1.1
+# 4. Use PIP_INDEX_URL env to install <private-package> from <private-feed>.
 - script: pdm add <private-package>
 ```
